@@ -1,1 +1,4 @@
-# flagify
+```sh
+# conda
+pip install flagify
+```
