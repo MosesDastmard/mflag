@@ -21,7 +21,7 @@ class Flag:
         flag_path = join(file_info['directory'], flag_name)
         return flag_path
 
-    def check_flagged(self, file_path : str) -> bool:
+    def isFlagged(self, file_path : str) -> bool:
         """validates if for a given file, the flag file exists, if so
         Args:
             file_path (str): file path
@@ -63,7 +63,7 @@ class Flag:
         
         
     class MakeBusy:
-        def __init__(self, path : str, max_attempts:int=100, check_interval:int=10, raise_error:bool=True):
+        def __init__(self, path : str):
             """In case several process has to access the same file or directory, and we have to avoid them all at once,
             this context manager will be used to check if the file or directory is busy with other processes or not, in case
             it's idle, it will make the file busy so that other processes can't access it. Use this in case of write action.
@@ -71,44 +71,43 @@ class Flag:
 
             Args:
                 path (str): path to file or directory
-                max_attempts (int, optional): max number of tries till it find the file or directory idle. Defaults to 100.
-                check_interval (int, optional): time between two busy checking tries. Defaults to 10.
-                raise_error (bool, optional): the action if the file or directory not getting idle after max tries. Defaults to True.
-                in case it's set to False, the code block in context manager will skip.
             """                
             self.path = path
-            self.max_attempts = max_attempts
-            self.check_interval = check_interval
-            self.raise_error = raise_error
             
         def __enter__(self):
             self.flag = Flag('busy')
-            attepmt = 1
-            while True:
-                if self.flag.check_flagged(self.path):
-                    time.sleep(self.check_interval/1000)
-                else:
-                    self.flag.put_flag(self.path)
-                    break
-                attepmt += 1
-                if attepmt >= self.max_attempts:
-                    if self.raise_error:
-                        raise Exception('Maximum attempt exceeded')
-                    else:
-                        # Do some magic
-                        sys.settrace(lambda *args, **keys: None)
-                        frame = sys._getframe(1)
-                        frame.f_trace = self.trace
-                        return None
-                                    
-        def trace(self, frame, event, arg):
-            raise SkipWithBlock()
-            
+            if self.flag.isFlagged(self.path):
+                raise Exception(f"path {self.path} is already busy.")
+            self.flag.put_flag(self.path)
 
         def __exit__(self, type, value, traceback):
-            if type is None:
-                self.flag.remove_flag(self.path)
-                return
-            if issubclass(type, SkipWithBlock):
-                return True
+            self.flag.remove_flag(self.path)
+            
+            
+    def isBusy(path):
+        """It checks a path is busy.
+
+        Args:
+            path (str): path to file or directory
+        """                
+        flag = Flag('busy')
+        return flag.isFlagged(path)
+    
+    class Busy:
+        def __init__(self, path):
+            self.path = path
+        
+        def __enter__(self):
+            while True:
+                if not Flag.isBusy(self.path):
+                    self.flag = Flag('busy')
+                    if self.flag.isFlagged(self.path):
+                        raise Exception(f"path {self.path} is already busy.")
+                    self.flag.put_flag(self.path)
+                    break
+                else:
+                    time.sleep(1)
+
+        def __exit__(self, type, value, traceback):
+            self.flag.remove_flag(self.path)
         

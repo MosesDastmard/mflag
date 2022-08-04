@@ -1,5 +1,3 @@
------------------
-
 # flagify: powerful Python toolkit for mark/unmark files and directories 
 [![PyPI Latest Release](https://img.shields.io/pypi/v/pandas.svg)](https://pypi.org/project/flagify/)
 
@@ -7,7 +5,6 @@
 
 **flagify** is a Python package that provides marking/unmarking files and directores. For years, dealing with processing files, we understood that we need to put flag for files/directories that are already processed. This package provides the ability to mark files/directories and avoid any unnecessary repeatitive processing of same files/directories.
 It also can manage serveral processes that willing to write on/in same files/directories. For example, we want to write to a parquet file, the whole processing generate part of the parquet file managed by a separate parallel processes. Using **flagify** avoid writing errors that happen at same time.
-
 
 ## Where to get it
 The source code is currently hosted on GitHub at:
@@ -20,7 +17,6 @@ Package Index (PyPI)](https://pypi.org/project/flagify/)
 # or PyPI
 pip install flagify
 ```
-
 
 ## Example
 
@@ -58,5 +54,3 @@ run it for the second time
 Process(process_name='convert_csv_to_parquet').run('data.csv', 'data.parquet')
 ```
 you will see it avoid to run the same process.
-
-
