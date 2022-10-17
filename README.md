@@ -13,18 +13,16 @@ https://github.com/MosesDastmard/flagify
 Binary installers for the latest released version are available at the [Python
 Package Index (PyPI)](https://pypi.org/project/flagify/)
 
-```sh
-# or PyPI
-pip install flagify
+
+```python
+# !pip install flagify
+from flagify import Flag, FlagPath
+import pandas as pd
+import os
 ```
 
-## Example
 
-```sh
-# or PyPI
-from flagify import Flag
-import pandas as pd
-
+```python
 # lets make a simple csv file
 data = {'name':['flagify', 'pandas', 'numpy'],
         'toolkit':['marking', 'data analysis', 'data computing']}
@@ -37,20 +35,43 @@ class Process(Flag):
         Flag.__init__(self, process_name)
         
     def run(self, csv_path, parquet_path):
-        if not self.check_flagged(csv_path):
+        if not self.isFlagged(csv_path):
             pd.read_csv(csv_path).to_parquet(parquet_path)
-            self.put_flag(csv_path)
+            self.putFlag(csv_path)
         else:
             print(f"the file {csv_path} is already processed")
 ```
 
-run it for the first time
-```sh
+
+```python
 Process(process_name='convert_csv_to_parquet').run('data.csv', 'data.parquet')
 ```
 
-run it for the second time
-```sh
+
+```python
 Process(process_name='convert_csv_to_parquet').run('data.csv', 'data.parquet')
 ```
-you will see it avoid to run the same process.
+
+    the file data.csv is already processed
+
+
+
+```python
+with FlagPath("data.csv", "contextmanagertest"):
+    if os.path.exists("data.csv"):
+        print("file exists")
+    else:
+        print("file does not exist")
+```
+
+    file exists
+
+
+
+```python
+with FlagPath("data.csv", "contextmanagertest"):
+    if os.path.exists("data.csv"):
+        print("file exists")
+    else:
+        print("file does not exist")
+```
