@@ -1,1 +1,1 @@
-from flagify.src.flag import Flag
+from flagify.src.flag import Flag, FlagPath

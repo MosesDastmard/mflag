@@ -1,38 +1,42 @@
 import os
-from os.path import join
-from .util import get_file_info
-import time
 import sys
-import inspect
+from os.path import join
 
+from mpath import get_path_info
 
-class SkipWithBlock(Exception):
-    pass
-
+flag_extention = '.flg'
 
 class Flag:
-    def __init__(self, flag_extention) -> None:
-        self.flag_extention = flag_extention
-        self.get_file_info = get_file_info
+    def __init__(self, process_name, hidden=True) -> None:
+        self.process_name = process_name
+        self.hidden = hidden
+        self.get_path_info = get_path_info
 
     def get_flag_path(self, file_path):
-        file_info = self.get_file_info(file_path)
-        flag_name = "." + file_info['file_name'] + "." + self.flag_extention + '.flg'
-        flag_path = join(file_info['directory'], flag_name)
+        file_info = self.get_path_info(file_path)
+        if self.hidden:
+            flag_name = "." + file_info.name + "." + self.process_name + flag_extention
+        else:
+            flag_name = file_info.name + "." + self.process_name + flag_extention
+        flag_path = join(file_info.directory, flag_name)
         return flag_path
 
-    def isFlagged(self, file_path : str) -> bool:
+    def isFlagged(self, file_paths : str) -> bool:
         """validates if for a given file, the flag file exists, if so
         Args:
             file_path (str): file path
         Returns:
             bool: True if flag file for given file exists, otherwise False
-        """        
-        flag_path = self.get_flag_path(file_path)
-        if os.path.exists(flag_path):
-            return True
-        else:
-            return False
+        """
+        if type(file_paths) == str:
+             file_paths = [file_paths]
+        if type(file_paths) != list:
+            raise Exception('file_paths should be a string path or list of string paths')
+        for file_path in file_paths:   
+            flag_path = self.get_flag_path(file_path)
+            if not os.path.exists(flag_path):
+                return False
+        return True
 
     def __flag(self, file_paths: list, mode):
         """it drops flag file along the given files that their full path provided
@@ -51,63 +55,39 @@ class Flag:
             if mode == 'put':
                 open(flag_path, 'w').close()
             elif mode == 'remove':
-                os.remove(flag_path)
+                if os.path.exists(flag_path):
+                    os.remove(flag_path)
             else:
                 raise Exception(f'mode has to be eigther "put" or "remove" (mode={mode} is not acceptable)')
 
-    def put_flag(self, file_paths):
+    def putFlag(self, file_paths):
         self.__flag(file_paths=file_paths, mode='put')
 
-    def remove_flag(self, file_paths):
+    def removeFlag(self, file_paths):
         self.__flag(file_paths=file_paths, mode='remove')
         
         
-    class MakeBusy:
-        def __init__(self, path : str):
-            """In case several process has to access the same file or directory, and we have to avoid them all at once,
-            this context manager will be used to check if the file or directory is busy with other processes or not, in case
-            it's idle, it will make the file busy so that other processes can't access it. Use this in case of write action.
-            It's not necessary for full read actions of the same file or directory.
+class SkipWithBlock(Exception):
+    pass
 
-            Args:
-                path (str): path to file or directory
-            """                
-            self.path = path
-            
-        def __enter__(self):
-            self.flag = Flag('busy')
-            if self.flag.isFlagged(self.path):
-                raise Exception(f"path {self.path} is already busy.")
-            self.flag.put_flag(self.path)
 
-        def __exit__(self, type, value, traceback):
-            self.flag.remove_flag(self.path)
-            
-            
-    def isBusy(path):
-        """It checks a path is busy.
-
-        Args:
-            path (str): path to file or directory
-        """                
-        flag = Flag('busy')
-        return flag.isFlagged(path)
-    
-    class Busy:
-        def __init__(self, path):
-            self.path = path
+class FlagPath(Flag):
+    def __init__(self, paths, process_name):
+        self.paths = paths
+        Flag.__init__(self, process_name)
         
-        def __enter__(self):
-            while True:
-                if not Flag.isBusy(self.path):
-                    self.flag = Flag('busy')
-                    if self.flag.isFlagged(self.path):
-                        raise Exception(f"path {self.path} is already busy.")
-                    self.flag.put_flag(self.path)
-                    break
-                else:
-                    time.sleep(1)
+    def __enter__(self):
+        if self.isFlagged(self.paths):
+            sys.settrace(lambda *args, **keys: None)
+            frame = sys._getframe(1)
+            frame.f_trace = self.trace
 
-        def __exit__(self, type, value, traceback):
-            self.flag.remove_flag(self.path)
-        
+    def trace(self, frame, event, arg):
+        raise SkipWithBlock()
+
+    def __exit__(self, type, value, traceback):
+        if type is None:
+            self.putFlag(self.paths)
+            return  # No exception
+        if issubclass(type, SkipWithBlock):
+            return True  # Suppress special SkipWithBlock exception
