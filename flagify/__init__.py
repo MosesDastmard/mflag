@@ -1,1 +1,1 @@
-from flagify.src.flag import Flag, FlagPath
+from flagify.src.flag import Flag, JobManager

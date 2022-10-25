@@ -71,13 +71,16 @@ class SkipWithBlock(Exception):
     pass
 
 
-class FlagPath(Flag):
-    def __init__(self, paths, process_name):
-        self.paths = paths
-        Flag.__init__(self, process_name)
+class JobManager(Flag):
+    def __init__(self, job_dir, job_id):
+        self.job_dir = job_dir
+        print(self.job_dir)
+        self.job_file_path = os.path.join(self.job_dir, 'job')
+        os.makedirs(self.job_dir, exist_ok=True)
+        Flag.__init__(self, job_id)
         
     def __enter__(self):
-        if self.isFlagged(self.paths):
+        if self.isFlagged(self.job_file_path):
             sys.settrace(lambda *args, **keys: None)
             frame = sys._getframe(1)
             frame.f_trace = self.trace
@@ -87,7 +90,8 @@ class FlagPath(Flag):
 
     def __exit__(self, type, value, traceback):
         if type is None:
-            self.putFlag(self.paths)
+            self.putFlag(self.job_file_path)
             return  # No exception
         if issubclass(type, SkipWithBlock):
             return True  # Suppress special SkipWithBlock exception
+
