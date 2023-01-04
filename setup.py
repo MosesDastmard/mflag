@@ -8,11 +8,11 @@ long_description = (this_directory / "README.md").read_text()
 
 setup(
     name="flagify",
-    version="1.5.0",
+    version="2.0.0",
     author="Moses Dastmard",
     description="put/remove flags for files and folders",
     long_description=long_description,
     long_description_content_type='text/markdown',
-    install_requires=["mpath"]
+    install_requires=["mpath", "pandas"],
     
 )
