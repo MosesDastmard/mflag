@@ -90,11 +90,14 @@ class JobManager:
     def __create_empty_job_file(self):
         job_df = pd.DataFrame(columns=['job_id', 'job_name', 'job_description', 'process_name', 'issue_date', 'finish_date'])
         job_df.set_index('job_id', inplace=True)
-        job_df.to_csv(self.job_file_path, index=False)
+        job_df.to_csv(self.job_file_path)
     
     def __is_job_done(self):
         job_df = pd.read_csv(self.job_file_path, index_col=0)
         if self.job_id not in job_df.index:
+            for col, value in {'job_name':self.job_name, 'job_description':self.job_description, 'process_name':self.process_name, 'issue_date':datetime.now(), 'finish_date':None}.items():
+                job_df.loc[self.job_id, col] = value
+            job_df.to_csv(self.job_file_path)
             return True
         job_row = job_df.loc[self.job_id]
         if pd.isna(job_row['finish_date']):
@@ -105,18 +108,23 @@ class JobManager:
 
     def __enter__(self):
         self.__initial_check()
-        self.issue_date = datetime.now()
-        if self.__is_job_done():
-            self.is_job_valid = True
-        else:
-            self.is_job_valid = False
-        return self.is_job_valid
+        if not self.__is_job_done():
+            sys.settrace(lambda *args, **keys: None)
+            frame = sys._getframe(1)
+            frame.f_trace = self.trace
+
+    def trace(self, frame, event, arg):
+        raise SkipWithBlock()
+    
+    def __finish_job(self):
+        job_df = pd.read_csv(self.job_file_path, index_col=0)
+        job_df.loc[self.job_id, 'finish_date'] = datetime.now()
+        job_df.to_csv(self.job_file_path)
         
     def __exit__(self, type, value, traceback):
         if type is None:
-            self.finish_date = datetime.now()
-            line = f"{self.job_id},{self.job_name},{self.job_description},{self.process_name},{self.issue_date},{self.finish_date}"
-            with open(self.job_file_path, 'a') as f:
-                f.write(line + '\n')
+            self.__finish_job()
             return  # No exception
 
+        if issubclass(type, SkipWithBlock):
+            return True
