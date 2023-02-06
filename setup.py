@@ -8,7 +8,7 @@ long_description = (this_directory / "README.md").read_text()
 
 setup(
     name="mflag",
-    version="1.5.1",
+    version="1.5.2",
     author="Moses Dastmard",
     description="put/remove flags for files and folders",
     long_description=long_description,
