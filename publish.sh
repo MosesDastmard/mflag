@@ -1,5 +1,5 @@
 #!/bin/bash
-python jupyter nbconvert --to markdown README.ipynb
+python -m jupyter nbconvert --to markdown README.ipynb
 wait
 rm -rf dist/
 python setup.py sdist bdist_wheel
