@@ -2,4 +2,4 @@
 rm -rf dist/
 python setup.py sdist bdist_wheel
 wait
-twine upload dist/* --verbose
+python -m twine upload dist/* --verbose

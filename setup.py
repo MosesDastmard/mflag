@@ -7,8 +7,8 @@ this_directory = Path(__file__).parent
 long_description = (this_directory / "README.md").read_text()
 
 setup(
-    name="flagify",
-    version="1.5.0",
+    name="mflag",
+    version="1.5.1",
     author="Moses Dastmard",
     description="put/remove flags for files and folders",
     long_description=long_description,
