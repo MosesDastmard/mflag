@@ -2,9 +2,9 @@ from pathlib import Path
 import os
 import sys
 from os.path import join
-import pandas as pd
 from mpath import get_path_info
 from datetime import datetime
+import json
 flag_extention = '.flg'
 
 class Flag:
@@ -73,42 +73,34 @@ class SkipWithBlock(Exception):
 
 
 class JobManager:
-    def __init__(self, job_file_path, job_id, job_name="", job_description="", process_name=""):
-        self.job_file_path = Path(job_file_path)
-        assert not os.path.isdir(self.job_file_path), f"job_file_path={self.job_file_path} is not a valid file path"
+    def __init__(self, job_dir_path, job_id, job_name="", job_description="", process_name=""):
+        self.job_dir_path = Path(job_dir_path)
         self.job_id = job_id
         self.job_name = job_name
         self.job_description = job_description
         self.process_name = process_name
-        self.job_file_dir = self.job_file_path.parent.absolute()
+        self.job_file_path = os.path.join(self.job_dir_path, self.job_id + ".json")
         
     def __initial_check(self):
-        os.makedirs(self.job_file_dir, exist_ok=True)
-        if not os.path.exists(self.job_file_path):
-            self.__create_empty_job_file()
-    
-    def __create_empty_job_file(self):
-        job_df = pd.DataFrame(columns=['job_id', 'job_name', 'job_description', 'process_name', 'issue_date', 'finish_date'])
-        job_df.set_index('job_id', inplace=True)
-        job_df.to_csv(self.job_file_path)
+        os.makedirs(self.job_dir_path, exist_ok=True)
     
     def __is_job_done(self):
-        job_df = pd.read_csv(self.job_file_path, index_col=0)
-        if self.job_id not in job_df.index:
-            for col, value in {'job_name':self.job_name, 'job_description':self.job_description, 'process_name':self.process_name, 'issue_date':datetime.now(), 'finish_date':None}.items():
-                job_df.loc[self.job_id, col] = value
-            job_df.to_csv(self.job_file_path)
-            return True
-        job_row = job_df.loc[self.job_id]
-        if pd.isna(job_row['finish_date']):
-            return True
+        if not os.path.exists(self.job_file_path):
+            job_dict = {'job_id':self.job_id, 'job_name':self.job_name, 'job_description':self.job_description, 'process_name':self.process_name, 'issue_date':str(datetime.now())}
+            with open(self.job_file_path, 'w') as f:
+                json.dump(job_dict, f)
+            return False
         else:
-            print(f"job_id={self.job_id} is already done, no need to run it again")
+            with open(self.job_file_path, 'r') as f:
+                job_dict = json.load(f)
+                if 'finish_date' in job_dict.keys():
+                    print(f"job_id={self.job_id} is already done, no need to run it again")
+                    return True
             return False
 
     def __enter__(self):
         self.__initial_check()
-        if not self.__is_job_done():
+        if self.__is_job_done():
             sys.settrace(lambda *args, **keys: None)
             frame = sys._getframe(1)
             frame.f_trace = self.trace
@@ -117,9 +109,11 @@ class JobManager:
         raise SkipWithBlock()
     
     def __finish_job(self):
-        job_df = pd.read_csv(self.job_file_path, index_col=0)
-        job_df.loc[self.job_id, 'finish_date'] = datetime.now()
-        job_df.to_csv(self.job_file_path)
+        with open(self.job_file_path, 'r') as f:
+            job_dict = json.load(f)
+            job_dict['finish_date'] = str(datetime.now())
+        with open(self.job_file_path, 'w') as f:
+            json.dump(job_dict, f)
         
     def __exit__(self, type, value, traceback):
         if type is None:
