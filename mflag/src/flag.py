@@ -87,6 +87,8 @@ class JobManager:
     def __is_job_done(self):
         if not os.path.exists(self.job_file_path):
             job_dict = {'job_id':self.job_id, 'job_name':self.job_name, 'job_description':self.job_description, 'process_name':self.process_name, 'issue_date':str(datetime.now())}
+            dir_path = os.path.dirname(self.job_file_path)
+            os.makedirs(dir_path, exist_ok=True)
             with open(self.job_file_path, 'w') as f:
                 json.dump(job_dict, f)
             return False

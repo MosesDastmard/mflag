@@ -106,7 +106,7 @@ def auto_reset(reserved_usage, usage_history):
     cpu_diff = round(cpu_usage - cpu_reserved, 2)
     cpu_diff = max(-100, min(cpu_diff, 100))
     mem_diff = round(mem_usage - mem_reserved, 2)
-    mem_diff = max(-MEM_SIZE, min(mem_diff, MEM_SIZE)) + swap_usage
+    mem_diff = max(-MEM_SIZE, min(mem_diff, MEM_SIZE))
     data_ = {
         "cpu": cpu_diff,
         "mem": mem_diff,
