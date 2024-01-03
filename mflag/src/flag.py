@@ -73,20 +73,19 @@ class SkipWithBlock(Exception):
 
 
 class JobManager:
-    def __init__(self, job_dir_path, job_id, job_name="", job_description="", process_name=""):
-        self.job_dir_path = Path(job_dir_path)
+    def __init__(self, dir_path, job_id, description=None):
+        self.dir_path = Path(dir_path)
         self.job_id = job_id
-        self.job_name = job_name
-        self.job_description = job_description
-        self.process_name = process_name
-        self.job_file_path = os.path.join(self.job_dir_path, self.job_id + ".json")
+        self.description = description
+        self.job_file_path = os.path.join(self.dir_path, self.job_id + ".json")
+        
         
     def __initial_check(self):
-        os.makedirs(self.job_dir_path, exist_ok=True)
+        os.makedirs(self.dir_path, exist_ok=True)
     
     def __is_job_done(self):
         if not os.path.exists(self.job_file_path):
-            job_dict = {'job_id':self.job_id, 'job_name':self.job_name, 'job_description':self.job_description, 'process_name':self.process_name, 'issue_date':str(datetime.now())}
+            job_dict = {'description':self.description, 'issue_date':str(datetime.now())}
             dir_path = os.path.dirname(self.job_file_path)
             os.makedirs(dir_path, exist_ok=True)
             with open(self.job_file_path, 'w') as f:
