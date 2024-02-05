@@ -12,6 +12,6 @@ setup(
     author="Moses Dastmard",
     description="put/remove flags for files and folders",
     long_description=long_description,
-    long_description_content_type='text/markdown',
-    install_requires=["mpath", "pandas", "numpy", "psutil"],
+    long_description_content_type="text/markdown",
+    install_requires=["pandas", "numpy", "psutil", "joblib", "pathlib", "sqlite3"],
 )

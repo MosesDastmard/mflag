@@ -2,24 +2,23 @@ from pathlib import Path
 import os
 import sys
 from os.path import join
-from mpath import get_path_info
 from datetime import datetime
 import json
+from pathlib import Path
 flag_extention = '.flg'
 
 class Flag:
     def __init__(self, process_name, hidden=True) -> None:
         self.process_name = process_name
         self.hidden = hidden
-        self.get_path_info = get_path_info
 
     def get_flag_path(self, file_path):
-        file_info = self.get_path_info(file_path)
+        file_path__ = Path(file_path)
         if self.hidden:
-            flag_name = "." + file_info.name + "." + self.process_name + flag_extention
+            flag_name = "." + file_path__.stem + "." + self.process_name + flag_extention
         else:
-            flag_name = file_info.name + "." + self.process_name + flag_extention
-        flag_path = join(file_info.directory, flag_name)
+            flag_name = file_path__.stem + "." + self.process_name + flag_extention
+        flag_path = join(file_path__.parent, flag_name)
         return flag_path
 
     def isFlagged(self, file_paths : str) -> bool:
