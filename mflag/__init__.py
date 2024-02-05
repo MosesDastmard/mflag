@@ -1,4 +1,4 @@
-__version__ = "1.7.0"
+__version__ = "1.7.1"
 
 from mflag.src.flag import Flag, JobManager
 from mflag.src.rcmng.server import run as RMServer
